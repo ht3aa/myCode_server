@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { getLibFilesContent } from "./lib/lib";
+import { getLibFilesContentAndStoreItInDb } from "./lib/lib";
 
 const path = "/mnt/hasanweb/programming/";
 
@@ -18,4 +18,4 @@ const folderIgnoreList = [
   "dist",
 ];
 const fileLanguagesList = ["js", "ts", "tsx", "jsx", "go"];
-getLibFilesContent(path, entries, folderIgnoreList, fileLanguagesList, 0, false);
+getLibFilesContentAndStoreItInDb(path, entries, folderIgnoreList, fileLanguagesList, 0, false);

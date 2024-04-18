@@ -12,7 +12,7 @@ function generateRandomString(len: number) {
   return str;
 }
 
-export async function getLibFilesContent(
+export async function getLibFilesContentAndStoreItInDb(
   path: string,
   entries: Array<string>,
   folderIgnoreList: Array<string>,
@@ -53,18 +53,13 @@ export async function getLibFilesContent(
       });
 
       if (item === "lib" || libCall) {
-        getLibFilesContent(newPath, subEntries, folderIgnoreList, fileLanguagesList, 0, true);
+        getLibFilesContentAndStoreItInDb(newPath, subEntries, folderIgnoreList, fileLanguagesList, 0, true);
       }
 
-      getLibFilesContent(newPath, subEntries, folderIgnoreList, fileLanguagesList, 0, false);
+      getLibFilesContentAndStoreItInDb(newPath, subEntries, folderIgnoreList, fileLanguagesList, 0, false);
     } else if (libCall && fileLanguagesList.includes(fileLanguage)) {
       if (!fs.existsSync("./files/" + fileLanguage + "/")) {
-        fs.mkdir("./files/" + fileLanguage + "/", { recursive: true }, (err) => {
-          if (err) {
-            console.error(err);
-            return;
-          }
-        });
+        fs.mkdirSync("./files/" + fileLanguage + "/", { recursive: true });
       }
 
       const randomsStr = generateRandomString(10);
@@ -80,5 +75,5 @@ export async function getLibFilesContent(
       );
     }
   }
-  getLibFilesContent(path, entries, folderIgnoreList, fileLanguagesList, index + 1, libCall);
+  getLibFilesContentAndStoreItInDb(path, entries, folderIgnoreList, fileLanguagesList, index + 1, libCall);
 }
