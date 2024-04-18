@@ -10,6 +10,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/escodegen": "^0.0.10",
     "@types/node": "^20.12.7"
+  },
+  "dependencies": {
+    "escodegen": "^2.1.0",
+    "pg": "^8.11.5",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "typescript": "^5.4.5"
   }
 }
