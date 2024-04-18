@@ -11,6 +11,7 @@ export class Functions {
   @Column()
   body!: string;
 
+
   @Column()
-  parameters!: string;
+  path!: string;
 }

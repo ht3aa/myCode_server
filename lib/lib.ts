@@ -3,6 +3,8 @@ import * as ts from "typescript";
 import { myDataSource } from "../typeorm.config";
 import escodegen from "escodegen";
 import { Functions } from "../entities/functions.entity";
+import { FileContent } from "./types";
+import { EntityTarget, ObjectLiteral } from "typeorm";
 
 function generateRandomString(len: number) {
   const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -17,7 +19,7 @@ function generateRandomString(len: number) {
 }
 
 export async function getLibFilesContent(
-  content: Array<string>,
+  content: Array<FileContent>,
   path: string,
   entries: Array<string>,
   folderIgnoreList: Array<string>,
@@ -87,18 +89,10 @@ export async function getLibFilesContent(
 
       const fileContent = fs.readFileSync(path + item);
 
-      content.push(fileContent.toString());
-
-      // fs.copyFile(
-      //   path + item,
-      //   "./files/" + fileLanguage + "/" + randomsStr + "." + fileLanguage,
-      //   (err) => {
-      //     if (err) {
-      //       console.error(err);
-      //       return;
-      //     }
-      //   },
-      // );
+      content.push({
+        path: path + item,
+        code: fileContent.toString(),
+      });
     }
   }
   return getLibFilesContent(
@@ -112,22 +106,50 @@ export async function getLibFilesContent(
   );
 }
 
-export async function storeFunctions(content: Array<string>) {
+export async function storeFunctions(content: Array<FileContent>) {
   if (!myDataSource.isInitialized) {
     await myDataSource.initialize();
   }
 
-  const node = ts.createSourceFile("x.ts", content[3], ts.ScriptTarget.Latest);
-  const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+  content.forEach((item) => {
+    const node = ts.createSourceFile("x.ts", item.code, ts.ScriptTarget.Latest);
+    const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+    node.statements.forEach(async (statement) => {
+      if (ts.isFunctionLike(statement)) {
+        const functionCode = printer.printNode(ts.EmitHint.Unspecified, statement, node);
+        const matchingName = functionCode.match(/(?<=function\s).*(?=\()/gm);
+        if(matchingName&&matchingName.length > 0) {
+          const functionName = matchingName[0];
 
-  const result = printer.printNode(ts.EmitHint.Unspecified, node.statements[5], node);
-  // console.log(node.statements[5]);
-  console.log(ts.isFunctionLike(node.statements[0]))
+          const newFunctionData = new Functions();
+
+          newFunctionData.name = functionName;
+          newFunctionData.body = functionCode;
+          newFunctionData.path = item.path;
+          await myDataSource.getRepository(Functions).save(newFunctionData);
+        }
+      }
+    });
+  });
+
   return content;
 }
 
-export async function storeLibFilesContent() {
+export async function deleteTables(tables: Array<EntityTarget<ObjectLiteral>>) {
   if (!myDataSource.isInitialized) {
     await myDataSource.initialize();
   }
+
+  tables.forEach(async (item) => {
+    await myDataSource.getRepository(item).delete({});
+  });
+
+}
+
+export async function getFunctionsData() {
+  if (!myDataSource.isInitialized) {
+    await myDataSource.initialize();
+  }
+
+  return myDataSource.getRepository(Functions).find();
 }
